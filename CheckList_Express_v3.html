@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Check List Express</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0D1F3C;--navy2:#1B3A6B;--blue:#2E6DB4;--blu:#E6F1FB;
+  --red:#C0392B;--lred:#FADBD8;--green:#1B6B3A;--lgreen:#D5F5E3;
+  --amber:#B7791F;--lamber:#FAEEDA;--gray:#F4F6FA;--gray2:#E8ECF4;
+  --gray3:#9BA3B5;--white:#FFFFFF;--text:#0D1F3C;--text2:#4A5568;
+  --r:14px;--rs:8px;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--navy);font-family:var(--font);color:var(--text)}
+#app{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-bottom:40px}
+
+/* TOPBAR */
+.topbar{width:100%;max-width:500px;display:flex;align-items:center;justify-content:space-between;padding:14px 16px}
+.topbar-brand{display:flex;align-items:center;gap:8px}
+.topbar-dot{width:8px;height:8px;border-radius:50%;background:#60A5FA}
+.topbar-name{font-size:12px;font-weight:600;color:rgba(255,255,255,.85);letter-spacing:.5px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.topbar-user{font-size:11px;color:rgba(255,255,255,.45);font-family:var(--mono)}
+.btn-logout{background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.55);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--font)}
+
+/* CARD */
+.card{width:100%;max-width:500px;background:var(--white);border-radius:var(--r);overflow:hidden;margin:0 10px}
+
+/* LOGIN */
+#login-screen{width:100%;max-width:500px;padding:16px}
+.login-hero{text-align:center;padding:28px 20px 16px}
+.brand-icon{width:52px;height:52px;border-radius:14px;background:var(--blue);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.brand-icon svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2}
+.login-hero h1{font-size:22px;font-weight:600;color:#fff}
+.login-hero p{font-size:13px;color:rgba(255,255,255,.45);margin-top:4px}
+.login-card{background:var(--white);border-radius:var(--r);padding:20px 18px;margin-bottom:8px}
+.login-card h2{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:2px}
+.login-card p{font-size:12px;color:var(--text2);margin-bottom:16px}
+.fld{margin-bottom:12px}
+.fld label{font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:5px}
+.fld select,.fld input{width:100%;padding:10px 13px;border:1.5px solid var(--gray2);border-radius:var(--rs);font-size:14px;font-family:var(--font);color:var(--text);background:var(--white);outline:none}
+.fld input:focus,.fld select:focus{border-color:var(--blue)}
+.show-wrap{position:relative}
+.show-wrap input{padding-right:44px}
+.show-wrap button{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:12px;color:var(--gray3);cursor:pointer;font-family:var(--mono)}
+.btn-login{width:100%;padding:12px;background:var(--navy2);border:none;border-radius:var(--rs);font-size:14px;font-weight:600;color:#fff;cursor:pointer}
+.login-err{background:var(--lred);color:var(--red);font-size:12px;padding:8px 12px;border-radius:var(--rs);text-align:center;display:none;margin-top:8px}
+
+/* NAV TABS */
+.tab-bar{display:flex;background:var(--navy2);width:100%;max-width:500px}
+.tab{flex:1;padding:12px 8px;text-align:center;font-size:12px;font-weight:500;color:rgba(255,255,255,.5);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.tab.active{color:#fff;border-bottom-color:#60A5FA}
+.tab-icon{font-size:16px;display:block;margin-bottom:2px}
+
+/* FORM HEADER */
+.form-hdr{background:var(--navy2);padding:16px 18px 12px}
+.prog-row{display:flex;justify-content:space-between;margin-bottom:8px}
+.prog-step{font-size:11px;color:rgba(255,255,255,.45);font-family:var(--mono)}
+.prog-title{font-size:15px;font-weight:600;color:#fff}
+.prog-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+.prog-bar{height:3px;background:rgba(255,255,255,.15);border-radius:99px;margin-top:10px;overflow:hidden}
+.prog-fill{height:100%;background:#60A5FA;border-radius:99px;transition:width .3s}
+
+/* FORM BODY */
+.form-body{padding:16px 14px}
+.form-section{display:none}
+.form-section.active{display:block}
+.qb{background:var(--gray);border-radius:var(--rs);padding:12px 13px;margin-bottom:10px}
+.ql{font-size:13px;font-weight:500;color:var(--navy);margin-bottom:8px;line-height:1.4}
+.ql .req{color:var(--red)}
+.obs-l{font-size:11px;color:var(--text2);margin:10px 0 5px;font-style:italic}
+.tri-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.tri{padding:9px 4px;border:1.5px solid var(--gray2);border-radius:var(--rs);background:var(--white);font-size:12px;font-weight:500;cursor:pointer;text-align:center;color:var(--text2);font-family:var(--font)}
+.tri.ok{border-color:var(--green);background:var(--lgreen);color:var(--green)}
+.tri.warn{border-color:var(--amber);background:var(--lamber);color:var(--amber)}
+.tri.bad{border-color:var(--red);background:var(--lred);color:var(--red)}
+.tri-item{margin-bottom:10px}
+.tri-item:last-child{margin-bottom:0}
+.ti-lbl{font-size:12px;color:var(--text);margin-bottom:5px;line-height:1.3}
+.sn-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sn{padding:10px;border:1.5px solid var(--gray2);border-radius:var(--rs);background:var(--white);font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:var(--text2);font-family:var(--font)}
+.sn.si{border-color:var(--green);background:var(--lgreen);color:var(--green)}
+.sn.no{border-color:var(--red);background:var(--lred);color:var(--red)}
+.stars{display:flex;gap:6px;justify-content:center}
+.star{width:44px;height:44px;border:1.5px solid var(--gray2);border-radius:var(--rs);background:var(--white);font-size:16px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);font-family:var(--mono)}
+.star.sel{background:var(--navy2);border-color:var(--navy2);color:#fff}
+.q-input{width:100%;padding:10px 12px;border:1.5px solid var(--gray2);border-radius:var(--rs);font-size:13px;font-family:var(--font);color:var(--text);background:var(--white);outline:none}
+.q-input:focus{border-color:var(--blue)}
+.q-ta{width:100%;padding:10px 12px;border:1.5px solid var(--gray2);border-radius:var(--rs);font-size:13px;font-family:var(--font);color:var(--text);background:var(--white);outline:none;resize:vertical;min-height:68px}
+.q-ta:focus{border-color:var(--blue)}
+.q-sel{width:100%;padding:10px 12px;border:1.5px solid var(--gray2);border-radius:var(--rs);font-size:13px;font-family:var(--font);color:var(--text);background:var(--white);outline:none}
+.opt-list{display:flex;flex-direction:column;gap:5px}
+.opt{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--white);border:1.5px solid var(--gray2);border-radius:var(--rs);cursor:pointer}
+.opt input{accent-color:var(--navy2);width:16px;height:16px;flex-shrink:0}
+.opt-lbl{font-size:13px;color:var(--text)}
+.opt.sel-b{border-color:var(--blue);background:var(--blu)}
+.opt.sel-b .opt-lbl{color:#0C447C;font-weight:500}
+
+/* NAV BUTTONS */
+.nav-row{display:flex;gap:10px;padding:12px 14px 18px;background:var(--white)}
+.btn-back{flex:1;padding:11px;border:1.5px solid var(--gray2);border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);background:var(--white);font-family:var(--font)}
+.btn-fwd{flex:2;padding:11px;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;color:#fff;background:var(--navy2);font-family:var(--font)}
+
+/* RESUMEN */
+.res-hdr{background:var(--navy2);padding:18px;text-align:center}
+.score-ring{width:68px;height:68px;border-radius:50%;border:3px solid;display:flex;align-items:center;justify-content:center;flex-direction:column;margin:0 auto 8px}
+.score-n{font-size:20px;font-weight:600;font-family:var(--mono)}
+.score-s{font-size:9px;opacity:.75}
+.res-ttl{font-size:15px;font-weight:600;color:#fff;margin-top:6px}
+.res-meta{font-size:11px;color:rgba(255,255,255,.45);margin-top:3px;font-family:var(--mono)}
+.res-sec{background:var(--white);border-bottom:1.5px solid var(--gray2);padding:13px 15px}
+.res-sec h3{font-size:11px;font-weight:600;color:var(--navy);letter-spacing:.4px;text-transform:uppercase;margin-bottom:9px;padding-bottom:5px;border-bottom:1px solid var(--gray2)}
+.res-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;border-bottom:.5px solid var(--gray2)}
+.res-row:last-child{border:none}
+.res-k{color:var(--text2);flex:1;padding-right:8px;line-height:1.3}
+.bdg{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-ok{background:var(--lgreen);color:var(--green)}
+.b-warn{background:var(--lamber);color:var(--amber)}
+.b-bad{background:var(--lred);color:var(--red)}
+.b-si{background:var(--lgreen);color:var(--green)}
+.b-no{background:var(--lred);color:var(--red)}
+.obs-txt{font-size:11px;color:var(--text2);font-style:italic;padding:5px 0 2px;line-height:1.5}
+.res-actions{padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--white)}
+.btn-wa{width:100%;padding:13px;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;color:#fff;background:#25D366;font-family:var(--font)}
+.btn-copy{width:100%;padding:10px;border:1.5px solid var(--gray2);border-radius:var(--rs);font-size:13px;cursor:pointer;color:var(--text2);background:var(--white);font-family:var(--font)}
+.btn-nueva{width:100%;padding:12px;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;color:#fff;background:var(--navy2);font-family:var(--font)}
+.save-msg{text-align:center;font-size:12px;padding:6px 0;display:none}
+.save-msg.ok{color:var(--green);display:block}
+.save-msg.err{color:var(--red);display:block}
+.save-msg.load{color:var(--blue);display:block}
+
+/* HISTORIAL */
+.hist-body{padding:14px}
+.hist-loading{text-align:center;padding:30px;color:var(--text2);font-size:13px}
+.hist-empty{text-align:center;padding:30px;color:var(--text2);font-size:13px}
+.visit-card{background:var(--white);border:1.5px solid var(--gray2);border-radius:var(--rs);margin-bottom:12px;overflow:hidden}
+.visit-hdr{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--gray);border-bottom:1px solid var(--gray2);cursor:pointer}
+.visit-score{width:38px;height:38px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;font-family:var(--mono)}
+.visit-info{flex:1}
+.visit-local{font-size:13px;font-weight:500;color:var(--navy)}
+.visit-fecha{font-size:11px;color:var(--text2);font-family:var(--mono)}
+.visit-resp-badge{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:600}
+.vr-ok{background:var(--lgreen);color:var(--green)}
+.vr-pend{background:var(--lamber);color:var(--amber)}
+.visit-detail{padding:12px 14px;display:none}
+.visit-detail.open{display:block}
+.vd-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:.5px solid var(--gray2)}
+.vd-row:last-child{border:none}
+.vd-k{color:var(--text2)}
+.vd-v{font-weight:500;color:var(--navy)}
+.resp-box{margin-top:12px;background:var(--gray);border-radius:var(--rs);padding:12px}
+.resp-box h4{font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px}
+.resp-prev{font-size:12px;color:var(--text2);font-style:italic;margin-bottom:8px;line-height:1.5}
+.resp-ta{width:100%;padding:9px 11px;border:1.5px solid var(--gray2);border-radius:var(--rs);font-size:13px;font-family:var(--font);color:var(--text);background:var(--white);outline:none;resize:vertical;min-height:64px}
+.resp-ta:focus{border-color:var(--blue)}
+.btn-resp{width:100%;margin-top:8px;padding:10px;border:none;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;color:#fff;background:var(--navy2);font-family:var(--font)}
+.resp-ok{font-size:12px;color:var(--green);text-align:center;padding:6px;display:none}
+.chevron{font-size:18px;color:var(--gray3);transition:transform .2s}
+.chevron.open{transform:rotate(180deg)}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--navy);color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-weight:500;transition:transform .3s;z-index:999;white-space:nowrap;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+@media(max-width:420px){
+  .card{margin:0;border-radius:0}
+  .tri{font-size:11px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar" id="topbar" style="display:none">
+    <div class="topbar-brand">
+      <div class="topbar-dot"></div>
+      <span class="topbar-name">CHECK LIST EXPRESS</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbar-user"></span>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <div class="login-hero">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+      </div>
+      <h1>Check List Express</h1>
+      <p>S6 Express &amp; Stock Express</p>
+    </div>
+    <div class="login-card">
+      <h2>Iniciar sesión</h2>
+      <p>Ingresá con tu usuario y contraseña</p>
+      <div class="fld">
+        <label>Usuario</label>
+        <select id="login-user">
+          <option value="">— Seleccioná —</option>
+          <optgroup label="Supervisores">
+            <option value="carlos">Carlos Ramírez</option>
+            <option value="gloria">Gloria</option>
+            <option value="damaris">Damaris</option>
+            <option value="yessica">Yéssica</option>
+            <option value="richard">Richard</option>
+            <option value="supervisor1">Supervisor 1</option>
+            <option value="supervisor2">Supervisor 2</option>
+            <option value="supervisor3">Supervisor 3</option>
+          </optgroup>
+          <optgroup label="Stock Express">
+            <option value="SE Zeballos Cue">SE Zeballos Cue</option>
+            <option value="SE Patricio Escobar">SE Patricio Escobar</option>
+            <option value="SE Primer Pdte.">SE Primer Pdte.</option>
+            <option value="SE Sajonia 1">SE Sajonia 1</option>
+            <option value="SE Tobati">SE Tobati</option>
+            <option value="SE Cnel Oviedo Cent">SE Cnel Oviedo Cent</option>
+            <option value="SE Figueroa">SE Figueroa</option>
+            <option value="SE Caballero">SE Caballero</option>
+            <option value="SE Peru">SE Peru</option>
+            <option value="SE Sacramento">SE Sacramento</option>
+            <option value="SE Sajonia 2">SE Sajonia 2</option>
+            <option value="SE Palma Loma">SE Palma Loma</option>
+            <option value="SE Gral Santos 2">SE Gral Santos 2</option>
+            <option value="SE Acosta Ñu">SE Acosta Ñu</option>
+            <option value="SE Pai Ñu">SE Pai Ñu</option>
+            <option value="SE Tte. Molas">SE Tte. Molas</option>
+            <option value="SE Campo Jordan">SE Campo Jordan</option>
+            <option value="SE 10 de Julio">SE 10 de Julio</option>
+            <option value="SE Pinedo">SE Pinedo</option>
+            <option value="SE Britez Borges">SE Britez Borges</option>
+            <option value="SE Panchito Lopez">SE Panchito Lopez</option>
+            <option value="SE de la Victoria">SE de la Victoria</option>
+            <option value="SE Boqueron">SE Boqueron</option>
+            <option value="SE Americo Picco">SE Americo Picco</option>
+            <option value="SE Pitiantuta">SE Pitiantuta</option>
+            <option value="SE Villa Hayes 1">SE Villa Hayes 1</option>
+            <option value="SE Mompox">SE Mompox</option>
+            <option value="SE Brasilia">SE Brasilia</option>
+            <option value="SE Soldado Ovelar">SE Soldado Ovelar</option>
+            <option value="SE Las Mercedes">SE Las Mercedes</option>
+            <option value="SE Avenida Paraguay">SE Avenida Paraguay</option>
+            <option value="SE Campo Via">SE Campo Via</option>
+            <option value="SE San Isidro">SE San Isidro</option>
+            <option value="SE Guatambu">SE Guatambu</option>
+            <option value="SE Rca. Colombia">SE Rca. Colombia</option>
+            <option value="SE Piquete">SE Piquete</option>
+            <option value="SE Nanawa">SE Nanawa</option>
+            <option value="SE Molas Lopez">SE Molas Lopez</option>
+            <option value="SE Las Residentas">SE Las Residentas</option>
+            <option value="SE Avenida">SE Avenida</option>
+            <option value="SE San Lorenzo">SE San Lorenzo</option>
+            <option value="SE 21 Proyectadas">SE 21 Proyectadas</option>
+            <option value="SE Fernando">SE Fernando</option>
+            <option value="SE Pratt Gill">SE Pratt Gill</option>
+          </optgroup>
+          <optgroup label="S6 Express">
+            <option value="S6X San Bernardino">S6X San Bernardino</option>
+            <option value="S6X Molas López 1">S6X Molas López 1</option>
+            <option value="S6X Shopping Oviedo">S6X Shopping Oviedo</option>
+            <option value="S6X Primer Presidente">S6X Primer Presidente</option>
+            <option value="S6X San Martin">S6X San Martin</option>
+            <option value="S6X Moiety">S6X Moiety</option>
+            <option value="S6X Boqueron">S6X Boqueron</option>
+            <option value="S6X San Bernardino 2">S6X San Bernardino 2</option>
+            <option value="S6X Avda. del Yacht">S6X Avda. del Yacht</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Contraseña</label>
+        <div class="show-wrap">
+          <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+          <button onclick="togglePass()" id="pass-btn">ver</button>
+        </div>
+      </div>
+      <div class="login-err" id="login-err">Usuario o contraseña incorrectos</div>
+      <button class="btn-login" onclick="doLogin()">Ingresar →</button>
+    </div>
+  </div>
+
+  <!-- MAIN CARD -->
+  <div class="card" id="main-card" style="display:none">
+
+    <!-- TABS -->
+    <div class="tab-bar" id="tab-bar">
+      <div class="tab active" id="tab-form" onclick="showTab('form')">
+        <span class="tab-icon">📋</span>Nueva visita
+      </div>
+      <div class="tab" id="tab-hist" onclick="showTab('hist')">
+        <span class="tab-icon">📂</span>Historial
+      </div>
+    </div>
+
+    <!-- FORM TAB -->
+    <div id="view-form">
+      <div class="form-hdr">
+        <div class="prog-row">
+          <span class="prog-step" id="prog-step">Paso 1 / 9</span>
+          <span class="prog-step" id="prog-pct">11%</span>
+        </div>
+        <div class="prog-title" id="prog-title">Cadena e identificación</div>
+        <div class="prog-sub" id="prog-sub">Datos del local visitado</div>
+        <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:11%"></div></div>
+      </div>
+      <div class="form-body">
+        <!-- S1 -->
+        <div class="form-section active" id="fs1">
+          <div class="qb">
+            <div class="ql">Cadena <span class="req">*</span></div>
+            <div class="opt-list" id="cadena-opts">
+              <label class="opt" onclick="pickOpt(this,'cadena','S6 Express')"><input type="radio" name="cadena" value="S6 Express"><span class="opt-lbl">S6 Express</span></label>
+              <label class="opt" onclick="pickOpt(this,'cadena','Stock Express')"><input type="radio" name="cadena" value="Stock Express"><span class="opt-lbl">Stock Express</span></label>
+            </div>
+          </div>
+          <div class="qb">
+            <div class="ql">Encargado de turno <span class="req">*</span></div>
+            <input class="q-input" id="encargado" type="text" placeholder="Nombre completo">
+          </div>
+        </div>
+        <!-- S2 -->
+        <div class="form-section" id="fs2">
+          <div class="qb">
+            <div class="ql">Gerente Regional <span class="req">*</span></div>
+            <select class="q-sel" id="gte-reg">
+              <option value="">— Seleccioná —</option>
+              <option>Sergio Ramírez</option><option>Carlos Ramírez</option>
+              <option>Daysi Matto</option><option>Elisa Florentín</option>
+              <option>Hugo Notario</option>
+            </select>
+          </div>
+          <div class="qb">
+            <div class="ql">Local visitado <span class="req">*</span></div>
+            <select class="q-sel" id="local-sel">
+              <option value="">— Seleccioná —</option>
+              <optgroup label="Stock Express">
+                <option>SE Zeballos Cue</option><option>SE Patricio Escobar</option>
+                <option>SE Primer Pdte.</option><option>SE Sajonia 1</option>
+                <option>SE Tobati</option><option>SE Cnel Oviedo Cent</option>
+                <option>SE Figueroa</option><option>SE Caballero</option>
+                <option>SE Peru</option><option>SE Sacramento</option>
+                <option>SE Sajonia 2</option><option>SE Palma Loma</option>
+                <option>SE Gral Santos 2</option><option>SE Acosta Ñu</option>
+                <option>SE Pai Ñu</option><option>SE Tte. Molas</option>
+                <option>SE Campo Jordan</option><option>SE 10 de Julio</option>
+                <option>SE Pinedo</option><option>SE Britez Borges</option>
+                <option>SE Panchito Lopez</option><option>SE de la Victoria</option>
+                <option>SE Boqueron</option><option>SE Americo Picco</option>
+                <option>SE Pitiantuta</option><option>SE Villa Hayes 1</option>
+                <option>SE Mompox</option><option>SE Brasilia</option>
+                <option>SE Soldado Ovelar</option><option>SE Las Mercedes</option>
+                <option>SE Avenida Paraguay</option><option>SE Campo Via</option>
+                <option>SE San Isidro</option><option>SE Guatambu</option>
+                <option>SE Rca. Colombia</option><option>SE Piquete</option>
+                <option>SE Nanawa</option><option>SE Molas Lopez</option>
+                <option>SE Las Residentas</option><option>SE Avenida</option>
+                <option>SE San Lorenzo</option><option>SE 21 Proyectadas</option>
+                <option>SE Fernando</option><option>SE Pratt Gill</option>
+              </optgroup>
+              <optgroup label="S6 Express">
+                <option>S6X San Bernardino</option><option>S6X Molas López 1</option>
+                <option>S6X Shopping Oviedo</option><option>S6X Primer Presidente</option>
+                <option>S6X San Martin</option><option>S6X Moiety</option>
+                <option>S6X Boqueron</option><option>S6X San Bernardino 2</option>
+                <option>S6X Avda. del Yacht</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+        <!-- S3 Stock -->
+        <div class="form-section" id="fs3">
+          <div class="qb">
+            <div id="stock-cont"></div>
+            <div class="obs-l">Observaciones de stock</div>
+            <textarea class="q-ta" id="obs-stock" placeholder="Describí lo observado..."></textarea>
+          </div>
+        </div>
+        <!-- S4 Punteras -->
+        <div class="form-section" id="fs4">
+          <div class="qb">
+            <div id="prom-cont"></div>
+            <div class="obs-l">Observaciones de punteras</div>
+            <textarea class="q-ta" id="obs-prom" placeholder="Describí lo observado..."></textarea>
+          </div>
+        </div>
+        <!-- S5 Atención -->
+        <div class="form-section" id="fs5">
+          <div class="qb">
+            <div id="aten-cont"></div>
+            <div class="obs-l">Observaciones de atención al cliente</div>
+            <textarea class="q-ta" id="obs-aten" placeholder="Describí lo observado..."></textarea>
+          </div>
+        </div>
+        <!-- S6 Mermas -->
+        <div class="form-section" id="fs6">
+          <div class="qb">
+            <div id="merma-cont"></div>
+            <div class="obs-l">Observaciones de mermas</div>
+            <textarea class="q-ta" id="obs-merma" placeholder="Describí lo observado..."></textarea>
+          </div>
+        </div>
+        <!-- S7 Personal -->
+        <div class="form-section" id="fs7">
+          <div class="qb">
+            <div id="personal-cont"></div>
+            <div class="obs-l">Observaciones del personal</div>
+            <textarea class="q-ta" id="obs-personal" placeholder="Describí lo observado..."></textarea>
+          </div>
+        </div>
+        <!-- S8 Limpieza -->
+        <div class="form-section" id="fs8">
+          <div class="qb">
+            <div id="limpieza-cont"></div>
+            <div class="obs-l">Observaciones de limpieza</div>
+            <textarea class="q-ta" id="obs-limpieza" placeholder="Describí lo observado..."></textarea>
+          </div>
+        </div>
+        <!-- S9 Responsable -->
+        <div class="form-section" id="fs9">
+          <div class="qb">
+            <div class="ql">Responsable de la visita <span class="req">*</span></div>
+            <input class="q-input" id="responsable" type="text" placeholder="Nombre y cargo">
+          </div>
+        </div>
+      </div>
+      <div class="nav-row" id="nav-row">
+        <button class="btn-back" id="btn-back" onclick="goBack()" style="display:none">← Atrás</button>
+        <button class="btn-fwd" id="btn-fwd" onclick="goNext()">Siguiente →</button>
+      </div>
+    </div>
+
+    <!-- RESUMEN TAB (shown after submit) -->
+    <div id="view-resumen" style="display:none">
+      <div class="res-hdr">
+        <div class="score-ring" id="score-ring">
+          <span class="score-n" id="score-num">—</span>
+          <span class="score-s">/ 100</span>
+        </div>
+        <div class="res-ttl" id="res-ttl">Visita completada</div>
+        <div class="res-meta" id="res-meta"></div>
+      </div>
+      <div id="resumen-body"></div>
+      <div class="res-actions">
+        <div class="save-msg" id="save-msg"></div>
+        <button class="btn-wa" onclick="compartirWA()">Enviar por WhatsApp</button>
+        <button class="btn-copy" onclick="copiarTexto()">Copiar al portapapeles</button>
+        <button class="btn-nueva" onclick="nuevaVisita()">Nueva visita</button>
+      </div>
+    </div>
+
+    <!-- HISTORIAL TAB -->
+    <div id="view-hist" style="display:none">
+      <div class="hist-body">
+        <div class="hist-loading" id="hist-loading">Cargando visitas...</div>
+        <div class="hist-empty" id="hist-empty" style="display:none">No hay visitas registradas aún.</div>
+        <div id="hist-list"></div>
+      </div>
+    </div>
+
+  </div><!-- /main-card -->
+</div><!-- /app -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5dJbPDLDA2rAVgh6i2TF7o8Xxe3yOf770CA-E7XcHqE126i6RLxilBK6WvIeDMQIX/exec';
+
+// ── USUARIOS ──────────────────────────────────────────────────────────────────
+const SUPERVISORS = {
+  'carlos':      {pass:'Carlos2024',   nombre:'Carlos Ramírez', rol:'supervisor'},
+  'gloria':      {pass:'Gloria2024',   nombre:'Gloria',          rol:'supervisor'},
+  'damaris':     {pass:'Damaris2024',  nombre:'Damaris',         rol:'supervisor'},
+  'yessica':     {pass:'Yessica2024',  nombre:'Yéssica',         rol:'supervisor'},
+  'richard':     {pass:'Richard2024',  nombre:'Richard',         rol:'supervisor'},
+  'supervisor1': {pass:'Super12024',   nombre:'Supervisor 1',    rol:'supervisor'},
+  'supervisor2': {pass:'Super22024',   nombre:'Supervisor 2',    rol:'supervisor'},
+  'supervisor3': {pass:'Super32024',   nombre:'Supervisor 3',    rol:'supervisor'},
+};
+const LOCALES_LIST = [
+  'SE Zeballos Cue','SE Patricio Escobar','SE Primer Pdte.','SE Sajonia 1','SE Tobati',
+  'SE Cnel Oviedo Cent','SE Figueroa','SE Caballero','SE Peru','SE Sacramento',
+  'SE Sajonia 2','SE Palma Loma','SE Gral Santos 2','SE Acosta Ñu','SE Pai Ñu',
+  'SE Tte. Molas','SE Campo Jordan','SE 10 de Julio','SE Pinedo','SE Britez Borges',
+  'SE Panchito Lopez','SE de la Victoria','SE Boqueron','SE Americo Picco','SE Pitiantuta',
+  'SE Villa Hayes 1','SE Mompox','SE Brasilia','SE Soldado Ovelar','SE Las Mercedes',
+  'SE Avenida Paraguay','SE Campo Via','SE San Isidro','SE Guatambu','SE Rca. Colombia',
+  'SE Piquete','SE Nanawa','SE Molas Lopez','SE Las Residentas','SE Avenida',
+  'SE San Lorenzo','SE 21 Proyectadas','SE Fernando','SE Pratt Gill',
+  'S6X San Bernardino','S6X Molas López 1','S6X Shopping Oviedo','S6X Primer Presidente',
+  'S6X San Martin','S6X Moiety','S6X Boqueron','S6X San Bernardino 2','S6X Avda. del Yacht',
+];
+const USERS = {...SUPERVISORS};
+LOCALES_LIST.forEach(loc => {
+  USERS[loc] = {pass: loc, nombre: 'Encargado ' + loc, rol: 'encargado', local: loc};
+});
+
+// ── ITEMS ─────────────────────────────────────────────────────────────────────
+const STOCK_ITEMS = [
+  {id:'carnes',lbl:'Estado de las carnes'},{id:'cortes',lbl:'Cortes y parrilla'},
+  {id:'carbon',lbl:'Exhibición de carbón'},{id:'imbatibles',lbl:'Ofertas imbatibles'},
+  {id:'gaseosas',lbl:'Gaseosas y cervezas'},{id:'frutas',lbl:'Exhibición de frutas'},
+  {id:'huevos',lbl:'Exhibición de huevos'},{id:'verduras',lbl:'Exhibición de verduras'},
+  {id:'panif_prop',lbl:'Panificados propios'},{id:'panif_terc',lbl:'Panificados de terceros'},
+  {id:'semi_coc',lbl:'Semi cocinados'},
+];
+const PROM_ITEMS = [
+  {id:'promo_vis',lbl:'Promociones y productos clave bien exhibidos'},
+  {id:'punteras',lbl:'Punteras y pestañas bien colocadas'},
+];
+const ATEN_ITEMS = [
+  {id:'caja',lbl:'Rapidez y calidad en caja'},
+  {id:'coccion_felipe',lbl:'Cocción del Felipe'},
+  {id:'coccion_galleta',lbl:'Cocción de la galleta'},
+  {id:'coccion_chipa',lbl:'Cocción de la chipa'},
+];
+const MERMA_ITEMS = [
+  {id:'danados',lbl:'Encontró productos dañados o vencidos'},
+  {id:'baja_venta',lbl:'Productos con baja venta y vencimiento corto'},
+];
+const PERSONAL_ITEMS = [{id:'capacitados',lbl:'Asociados bien capacitados'}];
+const LIMPIEZA_ITEMS = [
+  {id:'fachada',lbl:'La fachada se encuentra'},{id:'pasacalles',lbl:'Pasacalles bien exhibidos'},
+  {id:'carteles',lbl:'Carteles bien exhibidos'},{id:'estacionam',lbl:'Limpieza del estacionamiento'},
+  {id:'sala',lbl:'Limpieza de la sala'},{id:'frio',lbl:'Equipo de frío / aires'},
+  {id:'luces',lbl:'Luces y alarmas'},
+];
+
+const SEC_INFO = [null,
+  {title:'Cadena e identificación',sub:'Datos del local visitado'},
+  {title:'Gerente regional y local',sub:'¿Qué local visitás?'},
+  {title:'Check stock crítico',sub:'Evaluá el estado de cada sección'},
+  {title:'Punteras y promociones',sub:'Verificá la exhibición de productos clave'},
+  {title:'Atención al cliente',sub:'Calificación del 1 (muy malo) al 5 (excelente)'},
+  {title:'Mermas visibles',sub:'Productos dañados, vencidos o de vencimiento corto'},
+  {title:'Personal',sub:'Evaluá al equipo del local'},
+  {title:'Limpieza y orden',sub:'Estado general del local'},
+  {title:'Responsable de la visita',sub:'Confirmá tu identidad'},
+];
+
+let CU = null, step = 1;
+const D = {};
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function togglePass(){
+  const i=document.getElementById('login-pass');
+  const b=document.getElementById('pass-btn');
+  i.type=i.type==='password'?'text':'password';
+  b.textContent=i.type==='password'?'ver':'ocultar';
+}
+function doLogin(){
+  const usr=document.getElementById('login-user').value.trim();
+  const pass=document.getElementById('login-pass').value.trim();
+  const err=document.getElementById('login-err');
+  err.style.display='none';
+  if(!usr||!pass){err.textContent='Completá usuario y contraseña';err.style.display='block';return;}
+  const u=USERS[usr];
+  if(!u||u.pass!==pass){err.style.display='block';return;}
+  CU={key:usr,...u};
+  D.usuario_login=u.nombre;
+  document.getElementById('topbar').style.display='flex';
+  document.getElementById('topbar-user').textContent=u.nombre;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-card').style.display='block';
+  if(u.rol==='encargado'&&u.local){
+    const cad=u.local.startsWith('S6X')?'S6 Express':'Stock Express';
+    D.cadena=cad;
+    document.querySelectorAll('[name="cadena"]').forEach(r=>{
+      r.closest('.opt').classList.remove('sel-b');
+      if(r.value===cad){r.checked=true;r.closest('.opt').classList.add('sel-b');}
+    });
+    document.getElementById('local-sel').value=u.local;
+    D.local=u.local;
+  }
+  buildItems();
+}
+function logout(){location.reload();}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('view-form').style.display=tab==='form'?'block':'none';
+  document.getElementById('view-resumen').style.display='none';
+  document.getElementById('view-hist').style.display=tab==='hist'?'block':'none';
+  if(tab==='hist') loadHist();
+}
+
+// ── BUILD ITEMS ───────────────────────────────────────────────────────────────
+function buildItems(){
+  buildTri(STOCK_ITEMS,'stock-cont');
+  buildSN(PROM_ITEMS,'prom-cont');
+  buildStars(ATEN_ITEMS,'aten-cont');
+  buildSN(MERMA_ITEMS,'merma-cont');
+  buildSN(PERSONAL_ITEMS,'personal-cont');
+  buildTri(LIMPIEZA_ITEMS,'limpieza-cont');
+}
+function buildTri(items,cid){
+  const c=document.getElementById(cid);
+  items.forEach(it=>{
+    const d=document.createElement('div');d.className='tri-item';
+    d.innerHTML=`<div class="ti-lbl">${it.lbl}</div>
+      <div class="tri-row">
+        <button class="tri" onclick="pTri(this,'${it.id}','MUY BUENO','ok')">Muy bueno</button>
+        <button class="tri" onclick="pTri(this,'${it.id}','REGULAR','warn')">Regular</button>
+        <button class="tri" onclick="pTri(this,'${it.id}','MALO','bad')">Malo</button>
+      </div>`;
+    c.appendChild(d);
+  });
+}
+function buildSN(items,cid){
+  const c=document.getElementById(cid);
+  items.forEach(it=>{
+    const d=document.createElement('div');d.className='tri-item';
+    d.innerHTML=`<div class="ti-lbl">${it.lbl}</div>
+      <div class="sn-row">
+        <button class="sn" onclick="pSN(this,'${it.id}','SI','si')">Sí</button>
+        <button class="sn" onclick="pSN(this,'${it.id}','NO','no')">No</button>
+      </div>`;
+    c.appendChild(d);
+  });
+}
+function buildStars(items,cid){
+  const c=document.getElementById(cid);
+  items.forEach(it=>{
+    const d=document.createElement('div');d.className='tri-item';
+    d.innerHTML=`<div class="ti-lbl">${it.lbl}</div>
+      <div class="stars">${[1,2,3,4,5].map(n=>`<button class="star" onclick="pStar(this,'${it.id}',${n})">${n}</button>`).join('')}</div>`;
+    c.appendChild(d);
+  });
+}
+function pTri(b,id,v,cls){b.closest('.tri-row').querySelectorAll('.tri').forEach(x=>x.className='tri');b.className='tri '+cls;D[id]=v;}
+function pSN(b,id,v,cls){b.closest('.sn-row').querySelectorAll('.sn').forEach(x=>x.className='sn');b.className='sn '+cls;D[id]=v;}
+function pStar(b,id,v){b.closest('.stars').querySelectorAll('.star').forEach((x,i)=>x.className=i<v?'star sel':'star');D[id]=v;}
+function pickOpt(l,k,v){l.closest('.opt-list').querySelectorAll('.opt').forEach(o=>o.classList.remove('sel-b'));l.classList.add('sel-b');D[k]=v;}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+function updateHdr(){
+  const pct=Math.round((step/9)*100);
+  document.getElementById('prog-step').textContent=`Paso ${step} / 9`;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  document.getElementById('prog-title').textContent=SEC_INFO[step].title;
+  document.getElementById('prog-sub').textContent=SEC_INFO[step].sub;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('btn-back').style.display=step>1?'block':'none';
+  document.getElementById('btn-fwd').textContent=step===9?'Finalizar ✓':'Siguiente →';
+}
+function goNext(){
+  if(!validate()) return;
+  saveStep();
+  if(step===9){showResumen();return;}
+  document.getElementById('fs'+step).classList.remove('active');
+  step++;
+  document.getElementById('fs'+step).classList.add('active');
+  updateHdr();
+  window.scrollTo(0,0);
+}
+function goBack(){
+  document.getElementById('fs'+step).classList.remove('active');
+  step--;
+  document.getElementById('fs'+step).classList.add('active');
+  updateHdr();
+  window.scrollTo(0,0);
+}
+function validate(){
+  if(step===1){
+    if(!D.cadena){toast('Seleccioná la cadena');return false;}
+    const e=document.getElementById('encargado').value.trim();
+    if(!e){toast('Ingresá el nombre del encargado');return false;}
+    D.encargado=e;
+  }
+  if(step===2){
+    const g=document.getElementById('gte-reg').value;
+    const l=document.getElementById('local-sel').value;
+    if(!g){toast('Seleccioná el gerente');return false;}
+    if(!l){toast('Seleccioná el local');return false;}
+    D.gte_reg=g;D.local=l;
+  }
+  if(step===9){
+    const r=document.getElementById('responsable').value.trim();
+    if(!r){toast('Ingresá el responsable');return false;}
+    D.responsable=r;
+  }
+  return true;
+}
+function saveStep(){
+  if(step===3) D.obs_stock=document.getElementById('obs-stock').value.trim();
+  if(step===4) D.obs_prom=document.getElementById('obs-prom').value.trim();
+  if(step===5) D.obs_aten=document.getElementById('obs-aten').value.trim();
+  if(step===6) D.obs_merma=document.getElementById('obs-merma').value.trim();
+  if(step===7) D.obs_personal=document.getElementById('obs-personal').value.trim();
+  if(step===8) D.obs_limpieza=document.getElementById('obs-limpieza').value.trim();
+}
+
+// ── RESUMEN ───────────────────────────────────────────────────────────────────
+function calcScore(){
+  let pts=0,tot=0;
+  [...STOCK_ITEMS,...LIMPIEZA_ITEMS].forEach(i=>{if(D[i.id]){tot+=2;if(D[i.id]==='MUY BUENO')pts+=2;else if(D[i.id]==='REGULAR')pts+=1;}});
+  ATEN_ITEMS.forEach(i=>{if(D[i.id]){pts+=D[i.id];tot+=5;}});
+  [...PROM_ITEMS,...PERSONAL_ITEMS].forEach(i=>{if(D[i.id]){tot+=2;if(D[i.id]==='SI')pts+=2;}});
+  return tot>0?Math.round((pts/tot)*100):0;
+}
+function bTri(v){if(!v)return'<span class="bdg b-warn">—</span>';if(v==='MUY BUENO')return'<span class="bdg b-ok">Muy bueno</span>';if(v==='REGULAR')return'<span class="bdg b-warn">Regular</span>';return'<span class="bdg b-bad">Malo</span>';}
+function bSN(v){if(!v)return'<span class="bdg b-warn">—</span>';return v==='SI'?'<span class="bdg b-si">Sí</span>':'<span class="bdg b-no">No</span>';}
+function bStar(v){if(!v)return'<span class="bdg b-warn">—</span>';const c=v>=4?'b-ok':v>=3?'b-warn':'b-bad';return`<span class="bdg ${c}">${v}/5</span>`;}
+
+function showResumen(){
+  D.timestamp=new Date().toLocaleString('es-PY');
+  const sc=calcScore();
+  const col=sc>=70?['#27500A','#D5F5E3','Bueno']:sc>=50?['#633806','#FAEEDA','Regular']:['#791F1F','#FADBD8','Revisar'];
+  const ring=document.getElementById('score-ring');
+  ring.style.borderColor=col[0];ring.style.background=col[1];
+  document.getElementById('score-num').style.color=col[0];
+  document.getElementById('score-num').textContent=sc;
+  document.getElementById('res-ttl').textContent='Visita: '+(D.local||'—');
+  document.getElementById('res-meta').textContent=D.timestamp+' · '+col[2];
+
+  let h='';
+  h+=resSec('Identificación',[
+    ['Cadena',D.cadena||'—'],['Encargado',D.encargado||'—'],
+    ['Gerente',D.gte_reg||'—'],['Local',D.local||'—'],['Responsable',D.responsable||'—'],
+  ]);
+  h+=`<div class="res-sec"><h3>Stock crítico</h3>`;
+  STOCK_ITEMS.forEach(i=>h+=`<div class="res-row"><span class="res-k">${i.lbl}</span>${bTri(D[i.id])}</div>`);
+  if(D.obs_stock)h+=`<div class="obs-txt">${D.obs_stock}</div>`;h+='</div>';
+  h+=`<div class="res-sec"><h3>Punteras y promociones</h3>`;
+  PROM_ITEMS.forEach(i=>h+=`<div class="res-row"><span class="res-k">${i.lbl}</span>${bSN(D[i.id])}</div>`);
+  if(D.obs_prom)h+=`<div class="obs-txt">${D.obs_prom}</div>`;h+='</div>';
+  h+=`<div class="res-sec"><h3>Atención al cliente</h3>`;
+  ATEN_ITEMS.forEach(i=>h+=`<div class="res-row"><span class="res-k">${i.lbl}</span>${bStar(D[i.id])}</div>`);
+  if(D.obs_aten)h+=`<div class="obs-txt">${D.obs_aten}</div>`;h+='</div>';
+  h+=`<div class="res-sec"><h3>Mermas visibles</h3>`;
+  MERMA_ITEMS.forEach(i=>h+=`<div class="res-row"><span class="res-k">${i.lbl}</span>${bSN(D[i.id])}</div>`);
+  if(D.obs_merma)h+=`<div class="obs-txt">${D.obs_merma}</div>`;h+='</div>';
+  h+=`<div class="res-sec"><h3>Personal</h3><div class="res-row"><span class="res-k">Bien capacitados</span>${bSN(D['capacitados'])}</div>`;
+  if(D.obs_personal)h+=`<div class="obs-txt">${D.obs_personal}</div>`;h+='</div>';
+  h+=`<div class="res-sec"><h3>Limpieza y orden</h3>`;
+  LIMPIEZA_ITEMS.forEach(i=>h+=`<div class="res-row"><span class="res-k">${i.lbl}</span>${bTri(D[i.id])}</div>`);
+  if(D.obs_limpieza)h+=`<div class="obs-txt">${D.obs_limpieza}</div>`;h+='</div>';
+
+  document.getElementById('resumen-body').innerHTML=h;
+  document.getElementById('view-form').style.display='none';
+  document.getElementById('view-resumen').style.display='block';
+  window.scrollTo(0,0);
+  guardar(sc);
+}
+
+function resSec(ttl,rows){
+  let h=`<div class="res-sec"><h3>${ttl}</h3>`;
+  rows.forEach(([k,v])=>h+=`<div class="res-row"><span class="res-k">${k}</span><span style="font-weight:500;font-size:12px">${v}</span></div>`);
+  return h+'</div>';
+}
+
+// ── GUARDAR ───────────────────────────────────────────────────────────────────
+function guardar(score){
+  const msg=document.getElementById('save-msg');
+  msg.className='save-msg load';msg.textContent='Guardando en Google Drive...';
+  const payload={...D,score};
+  fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(()=>{msg.className='save-msg ok';msg.textContent='✔ Guardado en Google Drive';})
+    .catch(()=>{msg.className='save-msg err';msg.textContent='Error al guardar. Verificá la conexión.';});
+}
+
+// ── WHATSAPP ──────────────────────────────────────────────────────────────────
+function buildTexto(){
+  const sc=parseInt(document.getElementById('score-num').textContent)||0;
+  const nv=sc>=70?'Bueno':sc>=50?'Regular':'Requiere atención';
+  let t=`*CHECK LIST EXPRESS*\n━━━━━━━━━━━━━━━━\n📍 *${D.local||'—'}*\n🗓 ${D.timestamp}\n👤 Encargado: ${D.encargado||'—'}\n⭐ Puntaje: *${sc}/100* (${nv})\n\n`;
+  t+=`*STOCK CRÍTICO*\n`;STOCK_ITEMS.forEach(i=>t+=`• ${i.lbl}: ${D[i.id]||'—'}\n`);
+  if(D.obs_stock)t+=`_${D.obs_stock}_\n`;
+  t+=`\n*PUNTERAS*\n`;PROM_ITEMS.forEach(i=>t+=`• ${i.lbl.slice(0,35)}: ${D[i.id]||'—'}\n`);
+  t+=`\n*ATENCIÓN*\n`;ATEN_ITEMS.forEach(i=>t+=`• ${i.lbl}: ${D[i.id]||'—'}/5\n`);
+  if(D.obs_aten)t+=`_${D.obs_aten}_\n`;
+  t+=`\n*MERMAS*\n`;MERMA_ITEMS.forEach(i=>t+=`• ${i.lbl.slice(0,35)}: ${D[i.id]||'—'}\n`);
+  t+=`\n*LIMPIEZA*\n`;LIMPIEZA_ITEMS.forEach(i=>t+=`• ${i.lbl}: ${D[i.id]||'—'}\n`);
+  if(D.obs_limpieza)t+=`_${D.obs_limpieza}_\n`;
+  return t;
+}
+function compartirWA(){window.open('https://wa.me/?text='+encodeURIComponent(buildTexto()),'_blank');}
+function copiarTexto(){
+  const t=buildTexto();
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(()=>toast('Copiado al portapapeles')).catch(()=>fallbackCopy(t));
+  }else fallbackCopy(t);
+}
+function fallbackCopy(t){
+  const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.left='-9999px';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');toast('Copiado al portapapeles');}catch(e){toast('No se pudo copiar');}
+  document.body.removeChild(ta);
+}
+
+// ── NUEVA VISITA ──────────────────────────────────────────────────────────────
+function nuevaVisita(){
+  const ulog=D.usuario_login;
+  Object.keys(D).forEach(k=>delete D[k]);
+  D.usuario_login=ulog;
+  document.querySelectorAll('.tri').forEach(b=>b.className='tri');
+  document.querySelectorAll('.sn').forEach(b=>b.className='sn');
+  document.querySelectorAll('.star').forEach(b=>b.className='star');
+  document.querySelectorAll('.opt').forEach(b=>b.classList.remove('sel-b'));
+  document.querySelectorAll('.q-input,.q-ta').forEach(i=>i.value='');
+  document.querySelectorAll('.q-sel').forEach(s=>s.selectedIndex=0);
+  if(CU?.rol==='encargado'&&CU.local){
+    const cad=CU.local.startsWith('S6X')?'S6 Express':'Stock Express';
+    D.cadena=cad;
+    document.querySelectorAll('[name="cadena"]').forEach(r=>{
+      r.closest('.opt').classList.remove('sel-b');
+      if(r.value===cad){r.checked=true;r.closest('.opt').classList.add('sel-b');}
+    });
+    document.getElementById('local-sel').value=CU.local;
+    D.local=CU.local;
+  }
+  step=1;
+  document.querySelectorAll('.form-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('fs1').classList.add('active');
+  updateHdr();
+  document.getElementById('view-resumen').style.display='none';
+  document.getElementById('view-form').style.display='block';
+  document.getElementById('tab-form').classList.add('active');
+  document.getElementById('tab-hist').classList.remove('active');
+  document.getElementById('save-msg').className='save-msg';
+  window.scrollTo(0,0);
+}
+
+// ── HISTORIAL ─────────────────────────────────────────────────────────────────
+function loadHist(){
+  const list=document.getElementById('hist-list');
+  const loading=document.getElementById('hist-loading');
+  const empty=document.getElementById('hist-empty');
+  list.innerHTML='';loading.style.display='block';empty.style.display='none';
+
+  const localParam=CU?.rol==='encargado'?'&local='+encodeURIComponent(CU.local):'';
+  const url=APPS_SCRIPT_URL+'?action=hist'+localParam;
+
+  fetch(url)
+    .then(r=>r.json())
+    .then(res=>{
+      loading.style.display='none';
+      if(!res.data||res.data.length===0){empty.style.display='block';return;}
+      res.data.forEach((v,idx)=>list.appendChild(buildVisitCard(v,idx)));
+    })
+    .catch(()=>{
+      loading.style.display='none';
+      loading.style.display='block';
+      loading.textContent='Error al cargar. Verificá la conexión.';
+    });
+}
+
+function buildVisitCard(v,idx){
+  const sc=parseInt(v.score)||0;
+  const col=sc>=70?['#27500A','#D5F5E3']:sc>=50?['#633806','#FAEEDA']:['#791F1F','#FADBD8'];
+  const tieneResp=v.respuesta_encargado&&v.respuesta_encargado.toString().trim()!=='';
+  const esEncargado=CU?.rol==='encargado';
+
+  const card=document.createElement('div');
+  card.className='visit-card';
+  card.innerHTML=`
+    <div class="visit-hdr" onclick="toggleVisit('vd${idx}','ch${idx}')">
+      <div class="visit-score" style="border-color:${col[0]};background:${col[1]};color:${col[0]}">${sc}</div>
+      <div class="visit-info">
+        <div class="visit-local">${v.local||'—'}</div>
+        <div class="visit-fecha">${v.timestamp||'—'} · ${v.responsable||'—'}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <span class="visit-resp-badge ${tieneResp?'vr-ok':'vr-pend'}">${tieneResp?'Respondido':'Pendiente'}</span>
+        <span class="chevron" id="ch${idx}">▼</span>
+      </div>
+    </div>
+    <div class="visit-detail" id="vd${idx}">
+      <div class="vd-row"><span class="vd-k">Cadena</span><span class="vd-v">${v.cadena||'—'}</span></div>
+      <div class="vd-row"><span class="vd-k">Encargado</span><span class="vd-v">${v.encargado||'—'}</span></div>
+      <div class="vd-row"><span class="vd-k">Gerente</span><span class="vd-v">${v.gte_reg||'—'}</span></div>
+      <div class="vd-row"><span class="vd-k">Puntaje</span><span class="vd-v">${sc}/100</span></div>
+      <div class="vd-row"><span class="vd-k">Carnes</span><span class="vd-v">${v.carnes||'—'}</span></div>
+      <div class="vd-row"><span class="vd-k">Imbatibles</span><span class="vd-v">${v.imbatibles||'—'}</span></div>
+      <div class="vd-row"><span class="vd-k">Panificados propios</span><span class="vd-v">${v.panif_prop||'—'}</span></div>
+      <div class="vd-row"><span class="vd-k">Limpieza de sala</span><span class="vd-v">${v.sala||'—'}</span></div>
+      <div class="vd-row"><span class="vd-k">Personal capacitado</span><span class="vd-v">${v.capacitados||'—'}</span></div>
+      ${v.obs_stock?`<div class="vd-row"><span class="vd-k">Obs. stock</span><span class="vd-v" style="font-size:11px;font-style:italic">${v.obs_stock}</span></div>`:''}
+      <div class="resp-box">
+        <h4>${esEncargado?'Tu respuesta al supervisor':'Respuesta del encargado'}</h4>
+        ${tieneResp?`<div class="resp-prev">"${v.respuesta_encargado}"<br><span style="font-size:10px;color:#9BA3B5">${v.fecha_respuesta||''}</span></div>`:''}
+        ${esEncargado?`
+          <textarea class="resp-ta" id="resp-ta-${idx}" placeholder="Escribí tu respuesta o plan de acción...">${tieneResp?v.respuesta_encargado:''}</textarea>
+          <button class="btn-resp" onclick="enviarRespuesta('${v.timestamp}','resp-ta-${idx}','resp-ok-${idx}')">Enviar respuesta</button>
+          <div class="resp-ok" id="resp-ok-${idx}">✔ Respuesta enviada correctamente</div>
+        `:'<div style="font-size:12px;color:#9BA3B5;text-align:center;padding:6px">'+(tieneResp?'':'Sin respuesta aún')+'</div>'}
+      </div>
+    </div>`;
+  return card;
+}
+
+function toggleVisit(id,chId){
+  const el=document.getElementById(id);
+  const ch=document.getElementById(chId);
+  const open=el.classList.toggle('open');
+  ch.classList.toggle('open',open);
+}
+
+function enviarRespuesta(timestamp,taId,okId){
+  const ta=document.getElementById(taId);
+  const resp=ta.value.trim();
+  if(!resp){toast('Escribí tu respuesta antes de enviar');return;}
+  const btn=ta.nextElementSibling;
+  btn.textContent='Enviando...';btn.disabled=true;
+  fetch(APPS_SCRIPT_URL,{
+    method:'POST',mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'responder',timestamp,respuesta:resp})
+  }).then(()=>{
+    document.getElementById(okId).style.display='block';
+    btn.textContent='Respuesta enviada ✔';
+    toast('Respuesta enviada al supervisor');
+  }).catch(()=>{
+    btn.textContent='Error al enviar';btn.disabled=false;
+    toast('Error al enviar. Intentá de nuevo.');
+  });
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(m){
+  const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+</script>
+</body>
+</html>
