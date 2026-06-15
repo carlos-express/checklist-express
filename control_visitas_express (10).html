@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Control de Visitas — Express</title>
+<style>
+  :root{
+    --verde:#1F6F43;
+    --verde-claro:#E8F5EE;
+    --rojo:#C0392B;
+    --rojo-claro:#FBEAE8;
+    --ambar:#B8860B;
+    --ambar-claro:#FBF3E0;
+    --tinta:#1A2421;
+    --gris:#6B7670;
+    --linea:#DDE4E0;
+    --fondo:#F7F9F7;
+    --blanco:#FFFFFF;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--fondo);
+    color:var(--tinta);
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:480px; margin:0 auto; min-height:100vh; background:var(--blanco); display:flex; flex-direction:column;}
+
+  /* HEADER */
+  header{
+    background:var(--verde);
+    color:#fff;
+    padding:18px 20px 16px;
+    position:sticky; top:0; z-index:50;
+  }
+  header .toprow{display:flex; justify-content:space-between; align-items:center;}
+  header h1{font-size:1.05rem; font-weight:700; letter-spacing:.02em;}
+  header .sub{font-size:.75rem; opacity:.85; margin-top:2px;}
+  .userpill{
+    background:rgba(255,255,255,.18);
+    border-radius:999px;
+    padding:5px 12px;
+    font-size:.72rem;
+    font-weight:600;
+    display:flex; align-items:center; gap:6px;
+  }
+  .userpill button{
+    background:none; border:none; color:#fff; opacity:.7; font-size:.85rem; cursor:pointer; padding:0;
+  }
+
+  /* TABS */
+  nav.tabs{
+    display:flex;
+    border-bottom:1px solid var(--linea);
+    background:var(--blanco);
+    position:sticky; top:64px; z-index:49;
+  }
+  nav.tabs button{
+    flex:1; padding:12px 4px; font-size:.78rem; font-weight:600;
+    border:none; background:none; color:var(--gris); cursor:pointer;
+    border-bottom:3px solid transparent;
+  }
+  nav.tabs button.active{color:var(--verde); border-bottom-color:var(--verde);}
+
+  main{flex:1; padding:16px; padding-bottom:90px;}
+
+  /* LOGIN */
+  .login-screen{
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    min-height:100vh; padding:24px; text-align:center; gap:20px;
+  }
+  .login-screen .mark{
+    width:64px; height:64px; border-radius:16px; background:var(--verde);
+    display:flex; align-items:center; justify-content:center; color:#fff;
+    font-weight:800; font-size:1.6rem; letter-spacing:-.05em;
+  }
+  .login-screen h2{font-size:1.3rem; font-weight:800;}
+  .login-screen p{font-size:.85rem; color:var(--gris); max-width:280px;}
+  .login-options{display:flex; flex-direction:column; gap:10px; width:100%; max-width:300px;}
+  .login-options button{
+    padding:14px; border-radius:12px; border:1.5px solid var(--linea);
+    background:#fff; font-size:.95rem; font-weight:700; color:var(--tinta);
+    cursor:pointer; text-align:left; display:flex; justify-content:space-between; align-items:center;
+  }
+  .login-options button:active{background:var(--verde-claro); border-color:var(--verde);}
+  .login-options button .tag{font-size:.7rem; font-weight:600; color:var(--verde); background:var(--verde-claro); padding:3px 8px; border-radius:6px;}
+
+  /* CARDS / SECTIONS */
+  .section-title{
+    font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--gris); margin:18px 0 8px;
+  }
+  .section-title:first-child{margin-top:0;}
+  .card{
+    background:#fff; border:1px solid var(--linea); border-radius:14px;
+    padding:14px; margin-bottom:10px;
+  }
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px;}
+  .stat{
+    background:var(--verde-claro); border-radius:12px; padding:12px 14px;
+  }
+  .stat.alert{background:var(--rojo-claro);}
+  .stat.warn{background:var(--ambar-claro);}
+  .stat .num{font-size:1.6rem; font-weight:800; line-height:1.1; color:var(--tinta);}
+  .stat .lbl{font-size:.7rem; color:var(--gris); font-weight:600; margin-top:2px;}
+
+  /* STORE LIST */
+  .store-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 0; border-bottom:1px solid var(--linea);
+  }
+  .store-row:last-child{border-bottom:none;}
+  .store-row .name{font-size:.88rem; font-weight:700;}
+  .store-row .meta{font-size:.72rem; color:var(--gris); margin-top:1px;}
+  .badge{
+    font-size:.68rem; font-weight:700; padding:4px 10px; border-radius:999px; white-space:nowrap;
+  }
+  .badge.ok{background:var(--verde-claro); color:var(--verde);}
+  .badge.pend{background:var(--rojo-claro); color:var(--rojo);}
+  .badge.warn{background:var(--ambar-claro); color:var(--ambar);}
+
+  .go-btn{
+    width:100%; padding:14px; border-radius:12px; border:none;
+    background:var(--verde); color:#fff; font-weight:800; font-size:.92rem;
+    cursor:pointer; margin-top:6px;
+  }
+  .go-btn:disabled{background:#A9B5AE; cursor:not-allowed;}
+  .go-btn.secondary{background:#fff; color:var(--verde); border:1.5px solid var(--verde);}
+
+  /* FORM */
+  .checklist-group{margin-bottom:18px;}
+  .checklist-group h3{
+    font-size:.78rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--verde); margin-bottom:8px; padding-bottom:6px; border-bottom:2px solid var(--verde-claro);
+  }
+  .check-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:11px 0; border-bottom:1px solid var(--linea); gap:12px;
+  }
+  .check-item .label{font-size:.86rem; flex:1; line-height:1.3;}
+  .toggle-group{display:flex; gap:6px; flex-shrink:0;}
+  .toggle-group button{
+    width:42px; height:34px; border-radius:8px; border:1.5px solid var(--linea);
+    background:#fff; font-size:.95rem; font-weight:800; cursor:pointer; color:var(--gris);
+  }
+  .toggle-group button.sel-si{background:var(--verde); border-color:var(--verde); color:#fff;}
+  .toggle-group button.sel-no{background:var(--rojo); border-color:var(--rojo); color:#fff;}
+
+  textarea, select, input[type=text]{
+    width:100%; border:1.5px solid var(--linea); border-radius:10px; padding:10px;
+    font-size:.86rem; font-family:inherit; color:var(--tinta); background:#fff;
+  }
+  textarea{min-height:64px; resize:vertical; margin-top:6px;}
+  label.field-label{font-size:.78rem; font-weight:700; color:var(--gris); display:block; margin-bottom:4px;}
+
+  .req-star{color:var(--rojo);}
+
+  .progress-bar{
+    height:6px; background:var(--linea); border-radius:999px; overflow:hidden; margin:10px 0 14px;
+  }
+  .progress-bar > div{height:100%; background:var(--verde); transition:width .2s;}
+
+  .empty-state{
+    text-align:center; padding:40px 20px; color:var(--gris);
+  }
+  .empty-state .icon{font-size:2.4rem; margin-bottom:10px;}
+  .empty-state p{font-size:.85rem;}
+
+  .pill-row{display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; margin-bottom:10px;}
+  .pill-row::-webkit-scrollbar{display:none;}
+  .pill{
+    flex-shrink:0; padding:6px 12px; border-radius:999px; font-size:.74rem; font-weight:700;
+    border:1.5px solid var(--linea); background:#fff; color:var(--gris); cursor:pointer; white-space:nowrap;
+  }
+  .pill.active{background:var(--tinta); color:#fff; border-color:var(--tinta);}
+
+  .falla-row{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:10px 0; border-bottom:1px solid var(--linea);
+  }
+  .falla-row:last-child{border-bottom:none;}
+  .falla-row .txt{font-size:.83rem; flex:1; line-height:1.35;}
+  .falla-row .cnt{
+    background:var(--rojo); color:#fff; font-weight:800; font-size:.78rem;
+    width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+
+  .toast{
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+    background:var(--tinta); color:#fff; padding:12px 22px; border-radius:999px;
+    font-size:.85rem; font-weight:700; z-index:200; box-shadow:0 6px 20px rgba(0,0,0,.2);
+    max-width:90%; text-align:center;
+  }
+
+  .topbar-back{
+    display:flex; align-items:center; gap:8px; margin-bottom:4px; cursor:pointer;
+    font-size:.8rem; font-weight:700; color:#fff; opacity:.9;
+  }
+
+  .visit-card-row{display:flex; justify-content:space-between; align-items:flex-start;}
+  .visit-card-row .info .date{font-size:.7rem; color:var(--gris); font-weight:600;}
+  .visit-card-row .info .store{font-size:.92rem; font-weight:800; margin-top:2px;}
+  .visit-card-row .info .sup{font-size:.74rem; color:var(--gris); margin-top:1px;}
+  .score-circle{
+    min-width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:.85rem; flex-shrink:0;
+  }
+
+  .loader{
+    display:flex; align-items:center; justify-content:center; padding:40px; color:var(--gris); font-size:.85rem;
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+/* =========================================================
+   DATOS MAESTROS — Red Express (53 locales)
+   ========================================================= */
+const SUPERVISORES = {
+  gloria:  { nombre: "Gloria Corvalán",  color:"#1F6F43" },
+  damaris: { nombre: "Damaris Samudio",  color:"#2E5C8A" },
+  blanca:  { nombre: "Blanca Lezcano",   color:"#8A4B9E" }
+};
+
+// Lista de 53 locales con supervisor asignado
+const TIENDAS = [
+  // ===== GLORIA CORVALAN (19) =====
+  {cod:"4105", nombre:"SE Avenida", sup:"gloria"},
+  {cod:"4035", nombre:"SE Gral Santos 2", sup:"gloria"},
+  {cod:"4056", nombre:"SE Brasilia", sup:"gloria"},
+  {cod:"4032", nombre:"SE Sacramento", sup:"gloria"},
+  {cod:"4020", nombre:"SE Zeballos Cue", sup:"gloria"},
+  {cod:"4022", nombre:"SE Primer Pdte", sup:"gloria"},
+  {cod:"4059", nombre:"SE Las Mercedes 1", sup:"gloria"},
+  {cod:"4103", nombre:"SE Molas Lopez", sup:"gloria"},
+  {cod:"5013", nombre:"S6X Molas Lopez I", sup:"gloria"},
+  {cod:"5016", nombre:"S6X Primer Presidente", sup:"gloria"},
+  {cod:"5018", nombre:"S6X San Martin", sup:"gloria"},
+  {cod:"5019", nombre:"S6X Moiety", sup:"gloria"},
+  {cod:"5021", nombre:"S6X Boqueron", sup:"gloria"},
+  {cod:"4028", nombre:"SE COV Centro", sup:"gloria"},
+  {cod:"5014", nombre:"S6X Shopping Oviedo", sup:"gloria"},
+  {cod:"5023", nombre:"S6X Avda. del Yacht", sup:"gloria"},
+  {cod:"4062", nombre:"SE San Isidro I", sup:"gloria"},
+  {cod:"4021", nombre:"SE Patricio Escobar", sup:"gloria"},
+  {cod:"4061", nombre:"SE Campo Via", sup:"gloria"},
+
+  // ===== DAMARIS SAMUDIO (15) =====
+  {cod:"4030", nombre:"SE Bernardino Caballero", sup:"damaris"},
+  {cod:"4102", nombre:"SE Nanawa", sup:"damaris"},
+  {cod:"4053", nombre:"SE Villa Hayes", sup:"damaris"},
+  {cod:"4067", nombre:"SE Piquete Cue", sup:"damaris"},
+  {cod:"4055", nombre:"SE Mompox", sup:"damaris"},
+  {cod:"4043", nombre:"SE 10 de Julio", sup:"damaris"},
+  {cod:"4045", nombre:"SE Britez Borges", sup:"damaris"},
+  {cod:"4034", nombre:"SE Palma Loma", sup:"damaris"},
+  {cod:"4049", nombre:"SE Boqueron", sup:"damaris"},
+  {cod:"4104", nombre:"SE Las Residentas", sup:"damaris"},
+  {cod:"4031", nombre:"SE Peru y Azara", sup:"damaris"},
+  {cod:"4033", nombre:"SE Sajonia II", sup:"damaris"},
+  {cod:"4023", nombre:"SE Sajonia I", sup:"damaris"},
+  {cod:"4107", nombre:"SE 21 Proyectadas", sup:"damaris"},
+  {cod:"4065", nombre:"SE Rca. de Colombia", sup:"damaris"},
+
+  // ===== BLANCA LEZCANO (19) =====
+  {cod:"4058", nombre:"SE Soldado Ovelar", sup:"blanca"},
+  {cod:"4052", nombre:"SE Pitiantuta", sup:"blanca"},
+  {cod:"4063", nombre:"SE Guatambu", sup:"blanca"},
+  {cod:"4110", nombre:"SE Fernando", sup:"blanca"},
+  {cod:"5012", nombre:"S6X San Bernardino I", sup:"blanca"},
+  {cod:"4039", nombre:"SE Tte. Molas", sup:"blanca"},
+  {cod:"4041", nombre:"SE Campo Jordan", sup:"blanca"},
+  {cod:"4046", nombre:"SE Panchito Lopez", sup:"blanca"},
+  {cod:"4106", nombre:"SE SL 10 de Agosto", sup:"blanca"},
+  {cod:"4051", nombre:"SE Americo Picco", sup:"blanca"},
+  {cod:"4036", nombre:"SE Acosta Ñu", sup:"blanca"},
+  {cod:"4037", nombre:"SE Pai Ñu", sup:"blanca"},
+  {cod:"4060", nombre:"SE Avenida Paraguay", sup:"blanca"},
+  {cod:"4047", nombre:"SE De la Victoria", sup:"blanca"},
+  {cod:"5022", nombre:"S6X San Bernardino II", sup:"blanca"},
+  {cod:"4044", nombre:"SE Pinedo", sup:"blanca"},
+  {cod:"4029", nombre:"SE Figueroa", sup:"blanca"},
+  {cod:"4111", nombre:"SE Pratt Gill", sup:"blanca"},
+  {cod:"4024", nombre:"SE Tobati", sup:"blanca"}
+];
+
+/* =========================================================
+   CHECKLIST — items obligatorios
+   ========================================================= */
+const CHECKLIST = [
+  {
+    grupo: "Check List Express",
+    items: [
+      {id:"top300", label:"Carga Top 300 al día"},
+      {id:"imbatibles", label:"Carga Imbatibles al día"},
+      {id:"dotacion", label:"Dotación cargada correctamente"},
+      {id:"horario", label:"Horario de encargado cargado"},
+      {id:"quiebres", label:"Sin quiebres visibles en gondola"},
+      {id:"vencimientos", label:"Sin productos vencidos en gondola/depósito"},
+      {id:"retornabilidad", label:"Control de retornabilidad correcto"},
+      {id:"arqueo", label:"Arqueo de caja en orden"}
+    ]
+  },
+  {
+    grupo: "Estructura — Exterior",
+    items: [
+      {id:"fachada", label:"Fachada en buen estado (pintura, vidrios, luces)"},
+      {id:"toten", label:"Tótem funcionando y encendido"},
+      {id:"carteles", label:"Carteles/cartelería correcta y sin roturas"},
+      {id:"basurero", label:"Basurero exterior limpio y en su lugar"}
+    ]
+  },
+  {
+    grupo: "Estructura — Interior y equipos",
+    items: [
+      {id:"camara", label:"Cámaras de frío limpias"},
+      {id:"horno", label:"Horno funcionando correctamente"},
+      {id:"bandeja_horno", label:"Bandeja del horno limpia y en buen estado"},
+      {id:"matamoscas", label:"Matamoscas funcionando"}
+    ]
+  },
+  {
+    grupo: "Personal y orden general",
+    items: [
+      {id:"uniforme", label:"Personal con uniforme correcto"},
+      {id:"limpieza_general", label:"Limpieza general del local"},
+      {id:"orden_deposito", label:"Orden y limpieza en depósito"}
+    ]
+  }
+];
+
+const ALL_ITEM_IDS = CHECKLIST.flatMap(g => g.items.map(i => i.id));
+
+/* =========================================================
+   STORAGE HELPERS — Google Sheet vía Apps Script
+   ========================================================= */
+const API_URL = "https://script.google.com/macros/s/AKfycbyvYbMrLQJPXyUhI6k0A5WmUeu12fWOHni-vCC0KdISN-Z288ny6TvN_h2R5MjFARiBUA/exec";
+
+async function loadVisits(){
+  try{
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    if(!data.ok) return [];
+    // normalizar tipos: checks vienen como strings desde el Sheet
+    return data.visits.map(v => ({
+      ...v,
+      ts: Number(v.timestamp) || 0
+    }));
+  }catch(e){
+    console.error("Error cargando visitas:", e);
+    return [];
+  }
+}
+
+async function saveVisit(visit){
+  try{
+    await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(visit)
+    });
+    return true;
+  }catch(e){
+    console.error("Error guardando visita:", e);
+    return false;
+  }
+}
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let state = {
+  user: null,        // 'carlos' | 'gloria' | 'damaris' | 'blanca'
+  tab: 'inicio',      // inicio | nueva | historial | resumen
+  visits: [],
+  loading: true,
+  // formulario activo
+  form: null,
+  toast: null
+};
+
+function todayStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+function formatDate(iso){
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+/* =========================================================
+   RENDER ROUTER
+   ========================================================= */
+function render(){
+  const app = document.getElementById('app');
+  if(!state.user){
+    app.innerHTML = renderLogin();
+    return;
+  }
+  if(state.form){
+    app.innerHTML = renderForm();
+    return;
+  }
+  app.innerHTML = `
+    ${renderHeader()}
+    ${renderTabs()}
+    <main>${renderTabContent()}</main>
+    ${renderToast()}
+  `;
+}
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+function renderLogin(){
+  const count = s => TIENDAS.filter(t=>t.sup===s).length;
+  return `
+  <div class="login-screen">
+    <div class="mark">EX</div>
+    <h2>Control de Visitas Express</h2>
+    <p>Registro de relevamientos en local — gondolas, estructura y operación. Seleccioná tu usuario para continuar.</p>
+    <div class="login-options">
+      <button onclick="setUser('carlos')">Carlos (Operaciones) <span class="tag">Todas</span></button>
+      <button onclick="setUser('gloria')">Gloria Corvalán <span class="tag">${count('gloria')} locales</span></button>
+      <button onclick="setUser('damaris')">Damaris Samudio <span class="tag">${count('damaris')} locales</span></button>
+      <button onclick="setUser('blanca')">Blanca Lezcano <span class="tag">${count('blanca')} locales</span></button>
+    </div>
+  </div>`;
+}
+
+function setUser(u){
+  state.user = u;
+  render();
+  init();
+}
+
+/* =========================================================
+   HEADER + TABS
+   ========================================================= */
+function renderHeader(){
+  const nombre = state.user === 'carlos' ? 'Carlos · Operaciones' : SUPERVISORES[state.user].nombre;
+  return `
+  <header>
+    <div class="toprow">
+      <div>
+        <h1>Control de Visitas</h1>
+        <div class="sub">Red Express · 53 locales</div>
+      </div>
+      <div class="userpill">${nombre} <button onclick="logout()">⏻</button></div>
+    </div>
+  </header>`;
+}
+
+function logout(){
+  state.user = null;
+  state.tab = 'inicio';
+  render();
+}
+
+function renderTabs(){
+  const tabs = [
+    {id:'inicio', label:'Inicio'},
+    {id:'nueva', label:'Nueva visita'},
+    {id:'historial', label:'Historial'},
+    {id:'resumen', label:'Resumen'}
+  ];
+  return `<nav class="tabs">
+    ${tabs.map(t => `<button class="${state.tab===t.id?'active':''}" onclick="setTab('${t.id}')">${t.label}</button>`).join('')}
+  </nav>`;
+}
+
+async function setTab(t){
+  state.tab = t;
+  render();
+  // refrescar datos al entrar a estas pestañas, para ver cargas de otros usuarios
+  if(t === 'inicio' || t === 'historial' || t === 'resumen'){
+    state.visits = await loadVisits();
+    render();
+  }
+}
+
+/* =========================================================
+   TAB CONTENT
+   ========================================================= */
+function renderTabContent(){
+  if(state.loading) return `<div class="loader">Cargando datos…</div>`;
+  switch(state.tab){
+    case 'inicio': return renderInicio();
+    case 'nueva': return renderNueva();
+    case 'historial': return renderHistorial();
+    case 'resumen': return renderResumen();
+    default: return '';
+  }
+}
+
+/* ---- helpers de datos ---- */
+function tiendasVisibles(){
+  if(state.user === 'carlos') return TIENDAS;
+  return TIENDAS.filter(t => t.sup === state.user);
+}
+
+function visitasVisibles(){
+  const visibles = tiendasVisibles().map(t=>t.cod);
+  return state.visits.filter(v => visibles.includes(v.cod));
+}
+
+function visitadosHoy(){
+  const hoy = todayStr();
+  return new Set(visitasVisibles().filter(v=>v.fecha===hoy).map(v=>v.cod));
+}
+
+function scoreVisita(v){
+  const total = ALL_ITEM_IDS.length;
+  const ok = ALL_ITEM_IDS.filter(id => v.checks[id] === 'si').length;
+  return Math.round((ok/total)*100);
+}
+
+function scoreColor(score){
+  if(score >= 90) return 'var(--verde)';
+  if(score >= 70) return 'var(--ambar)';
+  return 'var(--rojo)';
+}
+
+/* =========================================================
+   INICIO
+   ========================================================= */
+function renderInicio(){
+  const tiendas = tiendasVisibles();
+  const visitas = visitasVisibles();
+  const hoySet = visitadosHoy();
+  const pendientes = tiendas.filter(t => !hoySet.has(t.cod));
+
+  // últimos 7 días para "no visitados recientemente"
+  const hace7 = new Date(); hace7.setDate(hace7.getDate()-7);
+  const hace7str = hace7.toISOString().slice(0,10);
+  const visitados7 = new Set(visitas.filter(v=>v.fecha>=hace7str).map(v=>v.cod));
+  const sinVisita7 = tiendas.filter(t=>!visitados7.has(t.cod));
+
+  const ultimas = [...visitas].sort((a,b)=> b.ts - a.ts).slice(0,4);
+
+  return `
+  <div class="section-title">Hoy — ${formatDate(todayStr())}</div>
+  <div class="stat-grid">
+    <div class="stat ok-stat">
+      <div class="num">${hoySet.size}/${tiendas.length}</div>
+      <div class="lbl">Locales visitados hoy</div>
+    </div>
+    <div class="stat ${pendientes.length>0?'alert':''}">
+      <div class="num">${pendientes.length}</div>
+      <div class="lbl">Pendientes hoy</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" style="margin-top:0">Sin visita en 7 días</div>
+    ${sinVisita7.length === 0 ? `<p style="font-size:.82rem; color:var(--gris)">Todos los locales tuvieron al menos una visita en los últimos 7 días. 👍</p>` :
+      sinVisita7.map(t=>`
+        <div class="store-row">
+          <div>
+            <div class="name">${t.cod} · ${t.nombre}</div>
+            <div class="meta">${SUPERVISORES[t.sup].nombre}</div>
+          </div>
+          <span class="badge pend">Sin visita</span>
+        </div>
+      `).join('')
+    }
+  </div>
+
+  <div class="card">
+    <div class="section-title" style="margin-top:0">Últimas visitas registradas</div>
+    ${ultimas.length === 0 ? `<p style="font-size:.82rem; color:var(--gris)">Todavía no hay visitas cargadas. Empezá desde "Nueva visita".</p>` :
+      ultimas.map(v=>{
+        const t = TIENDAS.find(x=>x.cod===v.cod);
+        const score = scoreVisita(v);
+        return `
+        <div class="visit-card-row" style="padding:10px 0; border-bottom:1px solid var(--linea);">
+          <div class="info">
+            <div class="date">${formatDate(v.fecha)} · ${SUPERVISORES[t.sup].nombre}</div>
+            <div class="store">${v.cod} · ${t.nombre}</div>
+            <div class="sup">${v.visitadoPor}</div>
+          </div>
+          <div class="score-circle" style="background:${scoreColor(score)}1A; color:${scoreColor(score)}">${score}%</div>
+        </div>`;
+      }).join('')
+    }
+  </div>
+
+  <button class="go-btn" onclick="setTab('nueva')">+ Registrar visita</button>
+  `;
+}
+
+/* =========================================================
+   NUEVA VISITA — selección de local
+   ========================================================= */
+function renderNueva(){
+  const tiendas = tiendasVisibles();
+  const hoySet = visitadosHoy();
+
+  // group by supervisor if carlos
+  let grupos;
+  if(state.user === 'carlos'){
+    grupos = Object.keys(SUPERVISORES).map(s=>({
+      sup:s, tiendas: tiendas.filter(t=>t.sup===s)
+    }));
+  } else {
+    grupos = [{sup:state.user, tiendas}];
+  }
+
+  return `
+  <div class="section-title">Seleccioná el local a relevar</div>
+  ${grupos.map(g=>`
+    <div class="card">
+      <div class="section-title" style="margin-top:0; color:${SUPERVISORES[g.sup].color}">${SUPERVISORES[g.sup].nombre}</div>
+      ${g.tiendas.map(t=>`
+        <div class="store-row" style="cursor:pointer" onclick="startVisit('${t.cod}')">
+          <div>
+            <div class="name">${t.cod} · ${t.nombre}</div>
+          </div>
+          ${hoySet.has(t.cod) ? '<span class="badge ok">Visitado hoy</span>' : '<span class="badge pend">Pendiente</span>'}
+        </div>
+      `).join('')}
+    </div>
+  `).join('')}
+  `;
+}
+
+function startVisit(cod){
+  const t = TIENDAS.find(x=>x.cod===cod);
+  state.form = {
+    cod: t.cod,
+    nombre: t.nombre,
+    sup: t.sup,
+    checks: {},
+    obs: {},
+    visitadoPor: state.user === 'carlos' ? 'Carlos (Operaciones)' : SUPERVISORES[state.user].nombre,
+    fecha: todayStr()
+  };
+  render();
+}
+
+/* =========================================================
+   FORMULARIO DE VISITA
+   ========================================================= */
+function renderForm(){
+  const f = state.form;
+  const totalItems = ALL_ITEM_IDS.length;
+  const answered = ALL_ITEM_IDS.filter(id=>f.checks[id]).length;
+  const pct = Math.round((answered/totalItems)*100);
+
+  return `
+  <header>
+    <div class="topbar-back" onclick="cancelForm()">← Cancelar</div>
+    <div class="toprow">
+      <div>
+        <h1>${f.cod} · ${f.nombre}</h1>
+        <div class="sub">${SUPERVISORES[f.sup].nombre} · ${formatDate(f.fecha)}</div>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="progress-bar"><div style="width:${pct}%"></div></div>
+    <p style="font-size:.76rem; color:var(--gris); margin-bottom:10px;">
+      ${answered}/${totalItems} ítems respondidos. Todos los ítems son <span class="req-star">obligatorios</span> para guardar la visita.
+    </p>
+
+    ${CHECKLIST.map(g=>`
+      <div class="checklist-group">
+        <h3>${g.grupo}</h3>
+        ${g.items.map(item=>`
+          <div class="check-item">
+            <div class="label">${item.label}</div>
+            <div class="toggle-group">
+              <button class="${f.checks[item.id]==='si'?'sel-si':''}" onclick="setCheck('${item.id}','si')">Sí</button>
+              <button class="${f.checks[item.id]==='no'?'sel-no':''}" onclick="setCheck('${item.id}','no')">No</button>
+            </div>
+          </div>
+          ${f.checks[item.id]==='no' ? `
+            <div style="margin-bottom:10px;">
+              <label class="field-label">¿Qué falencia se encontró? <span class="req-star">*</span></label>
+              <textarea placeholder="Detalle breve de la falencia..." oninput="setObs('${item.id}', this.value)">${f.obs[item.id]||''}</textarea>
+            </div>
+          ` : ''}
+        `).join('')}
+      </div>
+    `).join('')}
+
+    <div class="checklist-group">
+      <h3>Observaciones generales</h3>
+      <textarea placeholder="Comentario general de la visita (opcional)..." oninput="setGeneral(this.value)">${f.general||''}</textarea>
+    </div>
+
+    <button class="go-btn" onclick="submitVisit()" ${!allAnswered()?'disabled':''}>
+      ${allAnswered() ? 'Guardar visita' : `Faltan ${totalItems-answered} ítems`}
+    </button>
+    <button class="go-btn secondary" onclick="cancelForm()">Cancelar</button>
+  </main>
+  `;
+}
+
+function setCheck(id, val){
+  state.form.checks[id] = val;
+  if(val === 'si') delete state.form.obs[id];
+  render();
+}
+function setObs(id, val){
+  state.form.obs[id] = val;
+  // no re-render to avoid losing focus; update underlying state silently
+}
+function setGeneral(val){
+  state.form.general = val;
+}
+function allAnswered(){
+  if(!state.form) return false;
+  return ALL_ITEM_IDS.every(id=>{
+    const v = state.form.checks[id];
+    if(!v) return false;
+    if(v === 'no' && !(state.form.obs[id] && state.form.obs[id].trim().length>0)) return false;
+    return true;
+  });
+}
+function cancelForm(){
+  state.form = null;
+  render();
+}
+
+async function submitVisit(){
+  if(!allAnswered()) return;
+  const f = state.form;
+  const visit = {
+    id: 'v_' + Date.now(),
+    timestamp: Date.now(),
+    ts: Date.now(),
+    fecha: f.fecha,
+    cod: f.cod,
+    nombre: f.nombre,
+    sup: f.sup,
+    visitadoPor: f.visitadoPor,
+    checks: f.checks,
+    obs: f.obs,
+    general: f.general || ''
+  };
+  state.form = null;
+  state.tab = 'inicio';
+  state.toast = 'Guardando visita…';
+  render();
+
+  const ok = await saveVisit(visit);
+
+  if(ok){
+    state.visits.push(visit);
+    state.toast = 'Visita guardada correctamente';
+  } else {
+    state.toast = 'Error al guardar. Verificá tu conexión.';
+  }
+  render();
+  setTimeout(()=>{ state.toast=null; render(); }, 2500);
+}
+
+/* =========================================================
+   HISTORIAL
+   ========================================================= */
+function renderHistorial(){
+  const visitas = [...visitasVisibles()].sort((a,b)=>b.ts-a.ts);
+  if(visitas.length===0){
+    return `<div class="empty-state"><div class="icon">📋</div><p>Todavía no hay visitas registradas.</p></div>`;
+  }
+  return `
+  <div class="section-title">Historial de visitas (${visitas.length})</div>
+  ${visitas.map(v=>{
+    const score = scoreVisita(v);
+    const fallas = ALL_ITEM_IDS.filter(id=>v.checks[id]==='no').length;
+    return `
+    <div class="card" style="cursor:pointer" onclick="toggleDetail('${v.id}')">
+      <div class="visit-card-row">
+        <div class="info">
+          <div class="date">${formatDate(v.fecha)} · ${v.visitadoPor}</div>
+          <div class="store">${v.cod} · ${v.nombre}</div>
+          <div class="sup">${SUPERVISORES[v.sup].nombre} · ${fallas} falencia${fallas===1?'':'s'}</div>
+        </div>
+        <div class="score-circle" style="background:${scoreColor(score)}1A; color:${scoreColor(score)}">${score}%</div>
+      </div>
+      ${state.openDetail===v.id ? renderDetail(v) : ''}
+    </div>`;
+  }).join('')}
+  `;
+}
+
+function toggleDetail(id){
+  state.openDetail = state.openDetail===id ? null : id;
+  render();
+}
+
+function renderDetail(v){
+  const fallas = [];
+  CHECKLIST.forEach(g=>{
+    g.items.forEach(item=>{
+      if(v.checks[item.id]==='no'){
+        fallas.push({label:item.label, obs:v.obs[item.id]});
+      }
+    });
+  });
+  return `
+  <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--linea);">
+    ${fallas.length===0 ? `<p style="font-size:.82rem; color:var(--verde); font-weight:700;">✓ Sin falencias — 100% cumplimiento</p>` :
+      fallas.map(f=>`
+        <div style="margin-bottom:8px;">
+          <div style="font-size:.82rem; font-weight:700; color:var(--rojo)">✗ ${f.label}</div>
+          ${f.obs ? `<div style="font-size:.78rem; color:var(--gris); margin-top:2px;">${f.obs}</div>` : ''}
+        </div>
+      `).join('')
+    }
+    ${v.general ? `<div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--linea);">
+      <div style="font-size:.7rem; font-weight:800; color:var(--gris); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;">Observación general</div>
+      <div style="font-size:.82rem;">${v.general}</div>
+    </div>` : ''}
+  </div>`;
+}
+
+/* =========================================================
+   RESUMEN — análisis de patrones
+   ========================================================= */
+function renderResumen(){
+  const visitas = visitasVisibles();
+  if(visitas.length===0){
+    return `<div class="empty-state"><div class="icon">📊</div><p>Cargá visitas para ver el resumen y los patrones de falencias.</p></div>`;
+  }
+
+  // contar falencias por item
+  const counts = {};
+  ALL_ITEM_IDS.forEach(id=>counts[id]=0);
+  visitas.forEach(v=>{
+    ALL_ITEM_IDS.forEach(id=>{
+      if(v.checks[id]==='no') counts[id]++;
+    });
+  });
+  const totalVisitas = visitas.length;
+
+  // top falencias repetidas (en más de 1 local distinto)
+  const itemLocales = {}; // id -> set of cods
+  visitas.forEach(v=>{
+    ALL_ITEM_IDS.forEach(id=>{
+      if(v.checks[id]==='no'){
+        if(!itemLocales[id]) itemLocales[id]=new Set();
+        itemLocales[id].add(v.cod);
+      }
+    });
+  });
+
+  const ranking = ALL_ITEM_IDS
+    .map(id=>{
+      const item = CHECKLIST.flatMap(g=>g.items).find(i=>i.id===id);
+      return {id, label:item.label, count:counts[id], locales:(itemLocales[id]?itemLocales[id].size:0)};
+    })
+    .filter(x=>x.count>0)
+    .sort((a,b)=>b.locales-a.locales || b.count-a.count);
+
+  // promedio score por tienda (última visita de cada una)
+  const porTienda = {};
+  visitas.forEach(v=>{
+    if(!porTienda[v.cod] || v.ts > porTienda[v.cod].ts) porTienda[v.cod]=v;
+  });
+  const scores = Object.values(porTienda).map(v=>({...v, score:scoreVisita(v)}));
+  const peores = [...scores].sort((a,b)=>a.score-b.score).slice(0,5);
+
+  // promedio por supervisor
+  const porSup = {};
+  Object.keys(SUPERVISORES).forEach(s=>porSup[s]=[]);
+  scores.forEach(v=>{ if(porSup[v.sup]) porSup[v.sup].push(v.score); });
+
+  const promedioGeneral = Math.round(scores.reduce((a,b)=>a+b.score,0)/scores.length);
+
+  const filtro = state.resumenFiltro || 'todos';
+  const visiblesIds = filtro==='todos' ? ALL_ITEM_IDS :
+    CHECKLIST.find(g=>g.grupo.toLowerCase().includes(filtro))?.items.map(i=>i.id) || ALL_ITEM_IDS;
+  const rankingFiltrado = ranking.filter(r=>visiblesIds.includes(r.id));
+
+  return `
+  <div class="section-title">Resumen general</div>
+  <div class="stat-grid">
+    <div class="stat">
+      <div class="num">${totalVisitas}</div>
+      <div class="lbl">Visitas registradas</div>
+    </div>
+    <div class="stat ${promedioGeneral<80?'warn':''}">
+      <div class="num">${promedioGeneral}%</div>
+      <div class="lbl">Cumplimiento promedio</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" style="margin-top:0">Cumplimiento por supervisor</div>
+    ${Object.keys(SUPERVISORES).map(s=>{
+      const arr = porSup[s];
+      if(arr.length===0) return '';
+      const prom = Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+      return `
+      <div class="store-row">
+        <div>
+          <div class="name">${SUPERVISORES[s].nombre}</div>
+          <div class="meta">${arr.length} local${arr.length===1?'':'es'} con visita</div>
+        </div>
+        <span class="badge ${prom>=90?'ok':prom>=70?'warn':'pend'}">${prom}%</span>
+      </div>`;
+    }).join('')}
+  </div>
+
+  <div class="card">
+    <div class="section-title" style="margin-top:0">Falencias más repetidas</div>
+    <p style="font-size:.76rem; color:var(--gris); margin-bottom:8px;">Ordenadas por cantidad de locales distintos con esa misma falencia.</p>
+    <div class="pill-row">
+      <span class="pill ${filtro==='todos'?'active':''}" onclick="setResumenFiltro('todos')">Todos</span>
+      <span class="pill ${filtro==='exterior'?'active':''}" onclick="setResumenFiltro('exterior')">Exterior</span>
+      <span class="pill ${filtro==='interior'?'active':''}" onclick="setResumenFiltro('interior')">Interior/Equipos</span>
+      <span class="pill ${filtro==='personal'?'active':''}" onclick="setResumenFiltro('personal')">Personal</span>
+      <span class="pill ${filtro==='check'?'active':''}" onclick="setResumenFiltro('check')">Check List</span>
+    </div>
+    ${rankingFiltrado.length===0 ? `<p style="font-size:.82rem; color:var(--verde); font-weight:700;">✓ Sin falencias registradas en esta categoría.</p>` :
+      rankingFiltrado.map(r=>`
+        <div class="falla-row">
+          <div class="txt">${r.label}<br><span style="color:var(--gris); font-size:.72rem;">${r.locales} local${r.locales===1?'':'es'} distinto${r.locales===1?'':'s'} · ${r.count} visita${r.count===1?'':'s'} en total</span></div>
+          <div class="cnt">${r.locales}</div>
+        </div>
+      `).join('')
+    }
+  </div>
+
+  <div class="card">
+    <div class="section-title" style="margin-top:0">Locales con menor cumplimiento</div>
+    ${peores.map(v=>`
+      <div class="store-row">
+        <div>
+          <div class="name">${v.cod} · ${v.nombre}</div>
+          <div class="meta">${SUPERVISORES[v.sup].nombre} · última visita ${formatDate(v.fecha)}</div>
+        </div>
+        <span class="badge ${v.score>=90?'ok':v.score>=70?'warn':'pend'}">${v.score}%</span>
+      </div>
+    `).join('')}
+  </div>
+  `;
+}
+
+function setResumenFiltro(f){
+  state.resumenFiltro = f;
+  render();
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+function renderToast(){
+  if(!state.toast) return '';
+  return `<div class="toast">${state.toast}</div>`;
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+async function init(){
+  state.loading = true;
+  render();
+  state.visits = await loadVisits();
+  state.loading = false;
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
