@@ -343,12 +343,22 @@ async function loadVisits(){
   try{
     const res = await fetch(API_URL);
     const data = await res.json();
-    if(!data.ok) return [];
+    console.log("loadVisits response:", data);
+    if(!data.ok) {
+      console.warn("loadVisits: ok es false");
+      return [];
+    }
+    if(!data.visits || !Array.isArray(data.visits)) {
+      console.warn("loadVisits: visits no es array");
+      return [];
+    }
     // normalizar tipos: checks vienen como strings desde el Sheet
-    return data.visits.map(v => ({
+    const normalized = data.visits.map(v => ({
       ...v,
       ts: Number(v.timestamp) || 0
     }));
+    console.log("loadVisits normalized:", normalized);
+    return normalized;
   }catch(e){
     console.error("Error cargando visitas:", e);
     return [];
